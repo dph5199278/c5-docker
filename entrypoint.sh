@@ -2,9 +2,23 @@
 
 BUILD_ARCH=$(cat /etc/BUILD_ARCH 2>/dev/null || echo "unknown")
 
+# 最终执行命令的函数：用 /bin/sh 解析命令字符串
+run_command() {
+    # 兼容两种调用方式：
+    # - SHELL ["/entrypoint.sh"]        -> 命令在 $1
+    # - SHELL ["/entrypoint.sh", "-c"]  -> 命令在 $2
+    if [ "$1" = "-c" ]; then
+        shift
+        CMD="$*"
+    else
+        CMD="$1"
+    fi
+    exec /bin/sh -c "$CMD"
+}
+
 # 防止无限递归：如果已经完成 setarch 转换，则直接执行用户命令
 if [ -n "$SETARCH_DONE" ]; then
-    exec "$@"
+    run_command "$@"
 fi
 
 case "$BUILD_ARCH" in
@@ -13,7 +27,7 @@ case "$BUILD_ARCH" in
             export SETARCH_DONE=1
             exec linux64 "$0" "$@"
         else
-            exec "$@"
+            run_command "$@"
         fi
         ;;
     386)
@@ -21,11 +35,11 @@ case "$BUILD_ARCH" in
             export SETARCH_DONE=1
             exec linux32 "$0" "$@"
         else
-            exec "$@"
+            run_command "$@"
         fi
         ;;
     *)
         # 其他架构直接运行
-        exec "$@"
+        run_command "$@"
         ;;
 esac
