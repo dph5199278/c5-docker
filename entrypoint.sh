@@ -9,11 +9,8 @@ run_command() {
     # - SHELL ["/entrypoint.sh", "-c"]  -> 命令在 $2
     if [ "$1" = "-c" ]; then
         shift
-        CMD="$*"
-    else
-        CMD="$1"
     fi
-    exec /bin/sh -c "$CMD"
+    exec /bin/sh -c "$*"
 }
 
 # 防止无限递归：如果已经完成 setarch 转换，则直接执行用户命令
